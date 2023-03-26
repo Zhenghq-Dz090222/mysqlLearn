@@ -163,48 +163,52 @@
 	特点：
 	1、要查询的东西可以是：表中的字段、常量值、表达式、函数
 	2、通过select查询完的结果 ，是一个虚拟的表格，不是真实存在
-#1、查询表中的单个字段
-SELECT last_name FROM employees;
+	
+	#1、查询表中的单个字段
+	SELECT last_name FROM employees;
 
-#2、查询表中的多个字段
-SELECT last_name,salary,email FROM employees;	
+	#2、查询表中的多个字段
+	SELECT last_name,salary,email FROM employees;	
 
-#3、查询表中的所有字段
-SELECT * FROM employees;
+	#3、查询表中的所有字段
+	SELECT * FROM employees;
 
-#4、查询常量值
-SELECT 100;
-SELECT 'john';
+	#4、查询常量值。注意字符型和日期型的常量必须用单引号引起来，数值型不需要。
+	SELECT 100;
+	SELECT 'john';
 
-#5、查询表达式
-SELECT 100*98;
+	#5、查询表达式
+	SELECT 100*98;
 
-#6、查询函数
-SELECT VERSION();
+	#6、查询函数
+	SELECT VERSION();
 
-#7、起别名
-/*
-①便于理解
-②如果要查询的字段有重名的情况，使用别名可以区分开来
-*/
-#方式一：式显写出关键字AS
-SELECT 100%98 AS 结果;
-SELECT last_name AS 姓,first_name AS 名 FROM employees;
+	#7、起别名
+	/*
+	①便于理解
+	②如果要查询的字段有重名的情况，使用别名可以区分开来
+	*/
+	#方式一：式显写出关键字AS
+	SELECT 100%98 AS 结果;
+	SELECT last_name AS 姓,first_name AS 名 FROM employees;
 
-#方式二：隐藏关键字AS，使用空格
-SELECT last_name 姓,first_name 名 FROM employees;
-无论使用哪一种方式起别名，若别名中包含空格或者是#等特殊字符，必须将别名用双引号包裹，例如
-SELECT salary AS "out put" FROM employees;
+	#方式二：隐藏关键字AS，使用空格
+	SELECT last_name 姓,first_name 名 FROM employees;
+	无论使用哪一种方式起别名，若别名中包含空格或者是#等特殊字符，必须将别名用双引号包裹，例如
+	SELECT salary AS "out put" FROM employees;
 
-#8、去重。在字段前添加关键字DISTINCT
-SELECT DISTINCT department_id FROM employees;
+	#8、去重。在字段前添加关键字DISTINCT
+	SELECT DISTINCT department_id FROM employees;
+	#9、+号的作用仅仅只有一个功能就是运算符。若+运算符的左右两边有一方为字符型，mysql会试图将字符型转换为数值型。如果转换失败则将字符型数值转换成0。特别的若一方为null，则结果一定为null
+	#案例：查询员工名和姓连接成一个字段，显示为 姓名
+	SELECT last_name+first_name AS 姓名 FROM employees;  /*错误的查询*/
+	SELECT CONCAT(last_name,first_name) AS 姓名 FROM employees; 	/*正确的查询，CONCAT函数用于将字符拼接*/
 
-#9、+号的作用
-#案例：查询员工名和姓连接成一个字段，显示为 姓名
+
 
 
 ###进阶2：条件查询
-	条件查询：根据条件过滤原始表的数据，查询到想要的数据
+	条件查询：根据条件过滤原始表的数据，查询到想要的数据。语句内的执行顺序是先执行from语句，然后执行where语句，最后才是执行select语句
 	语法：
 	select 
 		要查询的字段|表达式|常量值|函数
@@ -214,23 +218,39 @@ SELECT DISTINCT department_id FROM employees;
 		条件 ;
 
 	分类：
-	一、条件表达式
+	一、按条件表达式筛选
 		示例：salary>10000
-		条件运算符：
+		简单条件运算符：
 		> < >= <= = != <>
 	
-	二、逻辑表达式
-	示例：salary>10000 && salary<20000
+	二、按逻辑表达式筛选，逻辑运算符的作用是连接条件表达式
+		示例：salary>10000 && salary<20000
 	
-	逻辑运算符：
-
+		逻辑运算符：
+		
 		and（&&）:两个条件如果同时成立，结果为true，否则为false
 		or(||)：两个条件只要有一个成立，结果为true，否则为false
 		not(!)：如果条件成立，则not后为false，否则为true
 
 	三、模糊查询
-	示例：last_name like 'a%'
+	模糊查询涉及到的关键字有like，between and，in，is null，is not null
+	#1、like一般和通配符搭配使用。通配符%表示0个或多个字符，通配符_表示一个字符
+	案例1：查询员工名中包含字母a的员工信息。
+	SELECT * FROM employees WHERE last_name LIKE '%a%';
+	案例2：查询员工名中第三个字符为e，第五个字符为a的员工名和工资
+	SELECT last_name,salary FROM employees WHERE last_name LIKE '__l_d%';
+	案例3：查询员工名中第二个字符为_的员工名。可以使用转义字符
+	SELECT last_name FROM employees WHERE last_name like '_\_%';
+	
+	#3、in的用法在条件查询中判断某字段的值是否属于in列表中的某一项，列表中的值类型必须统一。	案例：查询员工的工种编号是IT_PROG、AD_VP、AD_PRES中的一个员工名和工种编号
+	SELECT last_name,job_id FROM employees WHERE job_id IN('IT_PROG','AD_VP','AD_PRES');
 
+	#4、is null的用法。在mysql中=不能用于判断null，所以涉及到null值判断的，都必须使用is null或者is not null。
+	案例：查询没有奖金的员工名和奖金率
+	SELECT last_name,commission_pct FROM employees WHERE is null;
+	
+	
+	
 ###进阶3：排序查询	
 	
 	语法：
@@ -240,9 +260,12 @@ SELECT DISTINCT department_id FROM employees;
 		表
 	where 
 		条件
-	
 	order by 排序的字段|表达式|函数|别名 【asc|desc】
-
+	asc 表示的是升序，是默认的。desc是降序，需要显式的写出
+	
+	#6、按多个字段排序
+	案例：查询员工信息，要求先按工资升序，再按员工编号降序
+	SELECT * FROM employees ORDER BY salary ASC,department_id DESC;
 	
 ###进阶4：常见函数
 	一、单行函数
