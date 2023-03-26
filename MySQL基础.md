@@ -267,6 +267,7 @@
 	案例：查询员工信息，要求先按工资升序，再按员工编号降序
 	SELECT * FROM employees ORDER BY salary ASC,department_id DESC;
 	
+	
 ###进阶4：常见函数
 	一、单行函数
 	1、字符函数
@@ -292,16 +293,49 @@
 		truncate截断
 	3、日期函数
 		now当前系统日期+时间
-		curdate当前系统日期
-		curtime当前系统时间
+		curdate当前系统日期，不包含时间
+		curtime当前系统时间，不包含日期
 		str_to_date 将字符转换成日期
 		date_format将日期转换成字符
 	4、流程控制函数
-		if 处理双分支
-		case语句 处理多分支
-			情况1：处理等值判断
-			情况2：处理条件判断
+		1.if()函数有3个参数，等价于C语言中的三目运算符，用于 处理双分支。
 		
+		2.case函数的使用一：类似switch case 的效果
+			case 要判断的字段或表达式
+			when 常量1 then 要显示的值1或语句1；
+			when 常量2 then 要显示的值2或语句2；
+			...
+			else 要显示的值n或语句n;
+			end
+		
+			case的实例如下：
+			SELECT salary 原始工资,department_id,
+			CASE department_id
+			WHEN 30 THEN salary*1.1;
+			WHEN 40 THEN salary*1.2;
+			WHEN 50 THEN salary*1.3;
+			ELSE salary
+			END AS 新工资
+			from employees;
+		
+		3.case函数的使用二：类似多重if 
+			case 
+			when 条件1 then 要显示的值1或语句1；
+			when 条件2 then 要显示的值2或语句2；
+			...
+			else 要显示的值n或语句n;
+			end
+			
+			实例如下：
+			SELECT salary,
+			CASE
+			WHEN salary>20000 THEN 'A'
+			WHEN salary>15000 THEN 'B'
+			WHEN salary>10000 THEN 'C'
+			ELSE 'D'
+			END AS 工资级别
+			FROM employees;
+			
 	5、其他函数
 		version版本
 		database当前库
