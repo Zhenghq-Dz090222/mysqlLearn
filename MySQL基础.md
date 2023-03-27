@@ -405,8 +405,20 @@
 	分析：先查询每个部门的员工个数，然后根据前面的结果进行筛选，查询哪个部门的员工个数大于2
 	SELECT COUNT(*),department_id FROM employees GROUP BY department_id HAVING COUNT(*)>2;
 	
-	案例6：
-##进阶6：多表连接查询查询每个工种有奖金的员工的最高工资>12000的工种编号和最高工资
+	案例6：查询每个工种有奖金的员工的最高工资>12000的工种编号和最高工资
+	SELECT MAX(salary),job_id FROM employees WHERE commission_pct IS NOT NULL GROUP BY job_id HAVING MAX(salary)>12000;
+	
+	案例7：查询领导编号>102的每个领导手下的员工最低工资>5000的领导编号	分析：①先查询每个领导手下的员工最低工资，即生成的表的列应该包含manager_id，MIN(salary)这2列，故而需要以manager_id为分组条件进行分组查询
+	SELECT manager_id,MIN(salary) FROM employees GROUP BY manager_id;
+		  ②添加筛选条件：编号>102。因为编号在原始表中就有，所以采用where子句进行筛选
+    SELECT manager_id,MIN(salary) FROM employees WHERE manager_id>102 GROUP BY manager_id;
+		  ③继续添加筛选条件：最低工资大于5000。因为最低工资并不在原始表中，所以需要在HAVING子句中对条件进行筛选故而需要以manager_id为分组条件进行分组查询，
+		  然后在此次查询的基础上筛选MIN(salary)大于5000的manager_id。
+	 SELECT manager_id,MIN(salary) FROM employees WHERE manager_id>102 GROUP BY manager_id HAVING MIN(salary)>5000;
+
+
+	
+##进阶6：多表连接查询
 
 	笛卡尔乘积：如果连接条件省略或无效则会出现
 	解决办法：添加上连接条件
