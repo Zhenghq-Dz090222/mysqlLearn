@@ -215,7 +215,7 @@
 	from 
 		表
 	where 
-		条件 ;
+		条件(若该条件为字段，则该字段必须在表中存在) ;
 
 	分类：
 	一、按条件表达式筛选
@@ -342,41 +342,45 @@
 		user当前连接用户
 
 
-	
 
-
-二、分组函数
-
-
-		sum 求和
-		max 最大值
-		min 最小值
-		avg 平均值
-		count 计数
-	
+	二、统计函数
+	功能：用作统计使用，又称为聚合函数或分组函数或组函数。有如下几类：
+		sum() 求和。当参数为null时，不参与运算，即忽略null值
+		max() 最大值。当参数为null时，不参与运算，即忽略null值
+		min() 最小值。当参数为null时，不参与运算，即忽略null值
+		avg() 平均值。当参数为null时，不参与运算，即忽略null值
+		count() 计数。只计算不为null的个数。
+		和以上各分组函数一同查询的字段要求是group by后的字段
 		特点：
 		1、以上五个分组函数都忽略null值，除了count(*)
 		2、sum和avg一般用于处理数值型
-			max、min、count可以处理任何数据类型
+		   max、min、count可以处理任何数据类型
 	    3、都可以搭配distinct使用，用于统计去重后的结果
 		4、count的参数可以支持：
 			字段、*、常量值，一般放1
 	
-		   建议使用 count(*)
-
-
+		   建议使用 count(*)进行统计总行数
+		案例：
+			SELECT SUM(salary) AS 和,AVG(salary) AS 平均,MAX(salary) AS 最高,MIN(salary) AS 最低,COUNT(salary) 个数 FROM employees;
+		
+		案例：和distinct搭配
+			SELECT SUM(DISTINCT salary),SUM(salary) FROM employees;
+			SELECT COUNT(DISTINCT salary),COUNT(salary) FROM employees;
 ##进阶5：分组查询
 	语法：
-	select 查询的字段，分组函数
-	from 表
-	group by 分组的字段
-	
+		select 统计函数,查询的列(要求该列出现在group by的后面)
+		from 表
+		【where 筛选条件】
+		group by 分组的字段
+		【order by子句】
+	注意：
+		查询列表必须特殊，要求是统计函数和group by 后出现的字段。
 	
 	特点：
 	1、可以按单个字段分组
 	2、和分组函数一同查询的字段最好是分组后的字段
 	3、分组筛选
-			针对的表	位置			关键字
+					针对的表	位置			关键字
 	分组前筛选：	原始表		group by的前面		where
 	分组后筛选：	分组后的结果集	group by的后面		having
 	
@@ -384,7 +388,25 @@
 	5、可以支持排序
 	6、having后可以支持别名
 
-##进阶6：多表连接查询
+	#案例1：查询每个工种的最高工资
+	分析：看到"每个XX"，就以每个之后的字段为分组依据
+	SELECT MAX(salary),job_id FROM employees GROUP BY job_id; 
+	
+	#案例2：查询每个位置上的部门个数
+	SELECT COUNT(*),location_id FROM departments GROUP BY location_id;
+	
+	#案例3：查询邮箱中包含a字符的每个部门的平均工资
+	SELECT AVG(salary),department_id FROM employees WHERE email LIKE "%a%" GROUP BY department_id;
+	
+	#案例4：查询有奖金的每个领导手下员工的最高工资
+	SELECT MAX(salary),manager_id FROM employees WHERE commission_pct IS NOT NULL GROUP BY manager_id;
+	
+	案例5：查询哪个部门的员工个数大于2
+	分析：先查询每个部门的员工个数，然后根据前面的结果进行筛选，查询哪个部门的员工个数大于2
+	SELECT COUNT(*),department_id FROM employees GROUP BY department_id HAVING COUNT(*)>2;
+	
+	案例6：
+##进阶6：多表连接查询查询每个工种有奖金的员工的最高工资>12000的工种编号和最高工资
 
 	笛卡尔乘积：如果连接条件省略或无效则会出现
 	解决办法：添加上连接条件
