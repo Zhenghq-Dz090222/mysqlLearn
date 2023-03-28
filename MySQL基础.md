@@ -366,12 +366,15 @@
 		案例：和distinct搭配
 			SELECT SUM(DISTINCT salary),SUM(salary) FROM employees;
 			SELECT COUNT(DISTINCT salary),COUNT(salary) FROM employees;
+			
+			
+			
 ##进阶5：分组查询
 	语法：
 		select 统计函数,查询的列(要求该列出现在group by的后面)
 		from 表
 		【where 筛选条件】
-		group by 分组的字段
+		group by 分组的字段(或者是表达式或者是函数),分组的字段(或者是表达式或者是函数)
 		【order by子句】
 	注意：
 		查询列表必须特殊，要求是统计函数和group by 后出现的字段。
@@ -380,13 +383,13 @@
 	1、可以按单个字段分组
 	2、和分组函数一同查询的字段最好是分组后的字段
 	3、分组筛选
-					针对的表	位置			关键字
-	分组前筛选：	原始表		group by的前面		where
+					针对的表		位置			关键字
+	分组前筛选：	原始表			group by的前面		where
 	分组后筛选：	分组后的结果集	group by的后面		having
-	
+	统计函数作为分组条件肯定是放在having子句中。能用分组前筛选的，优先考虑分组前筛选，这有利于提升性能。
 	4、可以按多个字段分组，字段之间用逗号隔开
 	5、可以支持排序
-	6、having后可以支持别名
+
 
 	#案例1：查询每个工种的最高工资
 	分析：看到"每个XX"，就以每个之后的字段为分组依据
@@ -414,24 +417,86 @@
     SELECT manager_id,MIN(salary) FROM employees WHERE manager_id>102 GROUP BY manager_id;
 		  ③继续添加筛选条件：最低工资大于5000。因为最低工资并不在原始表中，所以需要在HAVING子句中对条件进行筛选故而需要以manager_id为分组条件进行分组查询，
 		  然后在此次查询的基础上筛选MIN(salary)大于5000的manager_id。
-	 SELECT manager_id,MIN(salary) FROM employees WHERE manager_id>102 GROUP BY manager_id HAVING MIN(salary)>5000;
+	SELECT manager_id,MIN(salary) FROM employees WHERE manager_id>102 GROUP BY manager_id HAVING MIN(salary)>5000;
 
-
+	案例：按员工姓名的长度分组，查询每一组的员工个数，筛选员工个数>5的有哪些
+	SELECT COUNT(*),LENGTH(last_name) len_name FROM employees GROUP BY LENGTH(last_name) HAVING COUNT(*)>5;
 	
-##进阶6：多表连接查询
+	案例：查询每个部门每个工种的员工的平均工资
+	分析：该查询是按多个字段分组，仅需在group by子句后接多个分组条件即可，每个条件之间用英文格式的逗号间隔即可
+	SELECT department_id,job_id,AVG(salary) FROM employees GROUP BY department_id,job_id;
 
-	笛卡尔乘积：如果连接条件省略或无效则会出现
-	解决办法：添加上连接条件
+	案例：查询每个部门每个工种的员工的平均工资，并且按平均工资的高低降序
+	SELECT department_id,job_id,AVG(salary) FROM employees GROUP BY department_id,job_id ORDER BY AVG(salary) DESC;
+
+
+
+##进阶6：多表连接查询，当查询的字段来自多个表时，会使用多表连接查询
 	
-一、传统模式下的连接 ：等值连接——非等值连接
-
-
-	1.等值连接的结果 = 多个表的交集
-	2.n表连接，至少需要n-1个连接条件
-	3.多个表不分主次，没有顺序要求
-	4.一般为表起别名，提高阅读性和性能
+	笛卡尔乘积现象：表1有m行，表2有n行，如果连接条件省略或无效则会出现结果为m*n行。
+	发生原因：没有有效的连接条件
+	解决办法：添加上有效的连接条件
 	
-二、sql99语法：通过join关键字实现连接
+	分类：
+		按年代分类：
+			sql92标准：仅仅支持内连接
+			sql99标准[推荐]：支持内连接+外连接(左外和右外)+交叉连接
+		按功能分类：
+			内连接：
+				等值连接
+				非等值连接
+				自连接
+			外连接：
+				左外连接
+				右外连接
+				全外连接
+			交叉连接
+			
+	一、sql92标准
+		#1、等值连接
+			①多表等值连接的结果为多表的交集部分。
+			②N表连接，至少需要N-1个连接条件。
+			③多个表不分主次，没有顺序要求。
+			④一般为表起别名，提高阅读性和性能。
+			⑤可以搭配前面介绍的所有子句使用，比如排序、分组、筛选。
+			
+			案例：查询员工名和对应的部门名
+			SELECT last_name,department_name FROM employees,departments WHERE employees.department_id=departments.department_id;
+			
+			案例：查询员工名、工种号、工种名。可以为表起别名，如果为表起了别名，则查询的字段就不能使用原来的表名
+			SELECT last_name,e.job_id,job_title FROM employees AS e,jobs AS j WHERE e.job_id=j.job_id;
+			
+			案例：查询有奖金的员工名、部门名。可以加筛选条件
+			SELECT last_name,department_name,commission_pct FROM employees e,departments d WHERE e.department_id=d.department_id AND e.commission_pct IS NOT NULL;
+			
+			案例：查询城市名中第二个字符为o的部门名和城市名。筛选条件模糊查询
+			SELECT department_name,city FROM departments d,locations l WHERE d.location_id=l.location_id AND l.city LIKE '_o%';
+
+			案例：查询每个城市的部门个数。可以加分组
+			SELECT COUNT(*),l.city FROM departments d,locations l WHERE d.location_id=l.location_id GROUP BY l.city; 
+			
+			案例：查询有奖金的每个部门的部门名和部门的领导编号和该部门的最低工资。
+			SELECT department_name,d.manager_id,MIN(salary) FROM employees e,departments d WHERE e.department_id=d.department_id AND e.commission_pct IS NOT NULL GROUP BY department_name,d.manager_id;
+			
+			案例：查询每个工种的工种名和员工的个数，并且按员工个数降序。可以加排序
+			SELECT COUNT(*) `count`,job_title FROM employees e,jobs j WHERE e.job_id=j.job_id GROUP BY job_title ORDER BY `count` DESC;
+			
+			案例：查询员工名、部门名和所在的城市。实现3表连接
+			SELECT last_name,department_name,city 
+			FROM employees e,departments d,locations l 
+			WHERE e.department_id=d.department_id AND d.location_id=l.location_id;
+			
+		#2、非等值连接
+			案例：查询员工的工资和工资级别
+			SELECT salary,grade_level FROM employees e,job_grades g WHERE salary BETWEEN g.lowest_sal AND g.highest_sal;
+		
+		#3、自连接
+			案例：查询员工名和上级的名称
+			SELECT e.employee_id,e.last_name,m.last_name FROM employees e,employees m WHERE e.manager_id=m.employee_id;
+		传统模式下的连接 ：等值连接——非等值连接
+		
+	
+	二、sql99语法：通过join关键字实现连接
 
 	含义：1999年推出的sql语法
 	支持：
