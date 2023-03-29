@@ -446,7 +446,7 @@
 				等值连接
 				非等值连接
 				自连接
-			外连接：
+			外连接：用于查询一个表中有，另一个表没有的记录
 				左外连接
 				右外连接
 				全外连接
@@ -513,7 +513,7 @@
 			
 		连接类型
 			内连接：inner
-			外连接：
+			外连接：用于查询一个表中有，另一个表没有的记录
 				左外连接：left [outer]
 				右外连接 right [outer]
 				全外连接 full [outer]
@@ -565,49 +565,67 @@
 				案例：查询姓名中包含字符k的员工的名字、上级的名字
 				SELECT e.last_name 员工名,m.last_name 上级名 FROM employees e INNER JOIN employees m ON e.manager_id=m.employee_id WHERE e.last_name LIKE '%k%';
 			
-三、自连接
-
-案例：查询员工名和直接上级的名称
-
-sql99
-
-	SELECT e.last_name,m.last_name
-	FROM employees e
-	JOIN employees m ON e.`manager_id`=m.`employee_id`;
-
-sql92
-
-	
-	SELECT e.last_name,m.last_name
-	FROM employees e,employees m 
-	WHERE e.`manager_id`=m.`employee_id`;
-
-
+			
+		（二）外连接：
+			应用场景：用于查询一个表中有，另一个表没有的记录。
+			特点：
+				①、外连接的查询结果为主表中的所有记录。如果从表中有和它匹配的，则显示匹配值，如果从表中没有和它匹配的，则显示null。外连接查询结果=内连接查询结果+主表中有而从表中没有的记录。
+				②、左外连接，left join左边的是主表。右外连接，right join右边的是主表。
+				③、左外和右外交换两个表的顺序，可以实现同样的效果。
+				④、全外连接=内连接的结果+表1中有但表2中没有的+表2中有但表1中没有的
+				⑤、交叉连接就是sql92中的笛卡尔乘积
+			案例：查询男朋友不在男神表的女神名
+			select b.name from beauty b left join boys bo on b.boyfriend_id=bo.id where bo.id is null;
+		
+			案例：查询哪个部门没有员工
+			SELECT d.*,e.employee_id FROM departments d LEFT JOIN employees e ON d.department_id=e.department_id WHERE e.employee_id IS NULL;
+		
+			案例：查询哪个城市没有部门
+			SELECT city FROM locations l LEFT JOIN departments d ON l.location_id=d.location_id WHERE d.department_id IS NULL;
+			
+			案例：查询部门名为SAL或IT的员工信息
+			
+			
+			
 ##进阶7：子查询
 
-含义：
+	含义：
+		一条查询语句中又嵌套了另一条完整的select语句，其中被嵌套的select语句，称为子查询或内查询。
+		在外面的查询语句，称为主查询或外查询
 
-	一条查询语句中又嵌套了另一条完整的select语句，其中被嵌套的select语句，称为子查询或内查询
-	在外面的查询语句，称为主查询或外查询
-
-特点：
-
-	1、子查询都放在小括号内
-	2、子查询可以放在from后面、select后面、where后面、having后面，但一般放在条件的右侧
-	3、子查询优先于主查询执行，主查询使用了子查询的执行结果
-	4、子查询根据查询结果的行数不同分为以下两类：
-	① 单行子查询
-		结果集只有一行
-		一般搭配单行操作符使用：> < = <> >= <= 
-		非法使用子查询的情况：
-		a、子查询的结果为一组值
-		b、子查询的结果为空
-		
-	② 多行子查询
-		结果集有多行
-		一般搭配多行操作符使用：any、all、in、not in
-		in： 属于子查询结果中的任意一个就行
-		any和all往往可以用其他查询代替
+	特点：
+		1、子查询都放在小括号内
+		2、子查询优先于主查询执行，主查询使用了子查询的执行结果
+		3、子查询根据查询结果集的行数不同分为以下几类：
+			①标量子查询(结果集只有一行一列)
+			②列子查询(结果集只有一列多行)
+			③行子查询(结果集有一行多列)
+			④表子查询(结果集一般为多行多列)
+		4、子查询根据出现的位置可以分为以下几类：
+			①子查询放在select后面：
+				仅仅支持标量子查询
+			②子查询放在from后面：
+				支持表子查询
+			③子查询放在where或having后面：
+				支持标量子查询(重点)
+				支持列子查询(重点)
+				支持行子查询(用的较少)
+			④子查询放在exists后面:
+				支持表子查询
+				
+				
+			① 单行子查询
+				结果集只有一行
+				一般搭配单行操作符使用：> < = <> >= <= 
+				非法使用子查询的情况：
+				a、子查询的结果为一组值
+				b、子查询的结果为空
+				
+			② 多行子查询
+				结果集有多行
+				一般搭配多行操作符使用：any、all、in、not in
+				in： 属于子查询结果中的任意一个就行
+				any和all往往可以用其他查询代替
 	
 ##进阶8：分页查询
 
