@@ -626,53 +626,132 @@
 				一般搭配多行操作符使用：any、all、in、not in
 				in： 属于子查询结果中的任意一个就行
 				any和all往往可以用其他查询代替
+				
+				
+	一、子查询放在where或having后面
+		(1).标量子查询(单行子查询)
+		(2).列子查询(多行子查询)
+		(3).行子查询(多行多列)
+		
+		特点：
+			子查询都放在小括号内且放在条件的右侧，一般搭配单行操作符合多行操作符(in、any、all)
+			
+		1、标量子查询	
+			案例：谁的工资比Abel高？
+			分析：(1)先查询Abel的工资，(2)查询员工的信息，满足salary>(1)的结果
+			SELECT last_name FROM employees WHERE salary>(SELECT salary FROM employees WHERE last_name='Abel');
+			
+			案例：返回job_id与141号员工相同，salary比143员工多的员工的姓名，job_id和工资
+			SELECT last_name,job_id,salary FROM employees WHERE job_id=(SELECT job_id FROM employees WHERE employee_id=141) AND salary>(SELECT salary FROM employees WHERE employee_id=143);
+		
+			案例：返回公司工资最少的员工的last_name，job_id和salary。
+			SELECT last_name,job_id,salary FROM employees WHERE salary=(SELECT MIN(salary) FROM employees);
+			
+			案例：查询最低工资大于50号部门最低工资的部门id和其最低工资。
+			SELECT department_id,MIN(salary) FROM employees GROUP BY department_id HAVING MIN(salary)>(SELECT MIN(salary) FROM employees WHERE department_id=50);
+		
+		
+		2、列子查询(一列多行)
+			案例：返回location_id是1400或1700的部门中所有员工姓名
+			分析：第一步先查询location_id是1400或1700的部门编号，然后再查询员工姓名，要求部门号是第一步查询结果列表中的某一个
+			SELECT last_name FROM employees WHERE department_id IN (SELECT DISTINCT department_id FROM departments WHERE location_id IN (1400,1700));
 	
+			案例：返回其他部门中比job_id为IT_PROG部门任一工资低的员工的工号、姓名、job_id及salary
+			SELECT employee_id,last_name,salary FROM employees WHERE job_id!='IT_PROG'  AND salary<ANY (SELECT DISTINCT  salary FROM employees WHERE job_id='IT_PROG');
+			
+			案例：返回其他部门中比job_id为IT_PROG部门所有工资都低的员工的工号、姓名、job_id及salary
+			SELECT employee_id,last_name,salary FROM employees WHERE job_id!='IT_PROG'  AND salary<ALL (SELECT DISTINCT  salary FROM employees WHERE job_id='IT_PROG');
+			
+			
+		3、行子查询(结果集为一行多列)
+			案例：查询员工编号最小且工资最高的员工信息
+			SELECT * FROM employees WHERE (employee_id,salary)=(SELECT MIN(employee_id),MAX(salary) FROM employees);
+			
+
+	二、子查询在select后面，仅仅支持结果集为一行一列的标量子查询
+		案例：查询每个部门的员工个数
+		SELECT d.*,(SELECT count(*) FROM employees e WHERE e.department_id=d.department_id) 个数 FROM departments d
+	
+	
+	三、子查询在from后面。要求必须起别名。
+		案例：查询每个部门的平均工资的工资等级
+		SELECT d.department_id,d.ag,grade_level FROM (SELECT department_id,AVG(salary) ag FROM employees GROUP BY department_id) d INNER JOIN job_grades g ON d.ag BETWEEN g.lowest_sal AND g.highest_sal;
+		
+	
+	四、子查询在exists后面。亦称为相关子查询。
+		语法：
+			exists (完整的查询语句) 
+		查询结果：
+			1或0。
+		案例：查询有员工的部门名
+		SELECT department_name FROM departments WHERE EXISTS(SELECT * FROM employees e WHERE d.department_id=e.department_id);
+		
+		案例：查询没有女朋友的男神的信息
+		SELECT bo.* FROM boys bo WHERE NOT EXISTS(SELECT boyfriend_id FROM beauty b WHERE bo.id=b.boyfriend_id)
+			
 ##进阶8：分页查询
 
-应用场景：
+	应用场景：
+		实际的web项目中需要根据用户的需求提交对应的分页查询的sql语句
 
-	实际的web项目中需要根据用户的需求提交对应的分页查询的sql语句
+	语法：
 
-语法：
+		select 字段|表达式,...			第7个执行
+		from 表							第1个执行
+		【join type join 表2			第2个执行
+		 on 连接条件					第3个执行
+		 where 筛选条件					第4个执行	
+		 group by 分组字段				第5个执行
+		 having 分组后的筛选条件		第6个执行
+		 order by 排序的字段】			第8个执行	
+		limit 【起始的条目索引，从0开始】,要显示的条目数;
 
-	select 字段|表达式,...
-	from 表
-	【where 条件】
-	【group by 分组字段】
-	【having 条件】
-	【order by 排序的字段】
-	limit 【起始的条目索引，】条目数;
+	特点：
 
-特点：
-
-	1.起始条目索引从0开始
+		1.起始条目索引从0开始
+		
+		2.limit子句放在查询语句的最后，且语句执行时也是最后
+		
+		3.公式：select * from  表 limit （page-1）*sizePerPage,sizePerPage
+		假如:
+		每页显示条目数sizePerPage
+		要显示的页数 page
+		
+	案例：查询第11条至25条的员工信息
+	SELECT * FROM employees LIMIT 10,15;
 	
-	2.limit子句放在查询语句的最后
+	案例：查询有奖金的员工信息，并且工资较高的前10名显示出来。
+	SELECT * FROM employees WHERE commission_pct IS NOT NULL ORDER BY salary DESC LIMIT 0,10;
 	
-	3.公式：select * from  表 limit （page-1）*sizePerPage,sizePerPage
-	假如:
-	每页显示条目数sizePerPage
-	要显示的页数 page
+	
+	
 
-##进阶9：联合查询
+##进阶9：联合查询：即将多条查询语句的结果合并成一个结果。
 
-引入：
-	union 联合、合并
+	引入：
+		union 联合、合并
 
-语法：
+	应用场景：
+		要查询的结果来自于多个表，且多个表没有直接的连接关系，但查询的信息一致时
+	语法：
 
-	select 字段|常量|表达式|函数 【from 表】 【where 条件】 union 【all】
-	select 字段|常量|表达式|函数 【from 表】 【where 条件】 union 【all】
-	select 字段|常量|表达式|函数 【from 表】 【where 条件】 union  【all】
-	.....
-	select 字段|常量|表达式|函数 【from 表】 【where 条件】
+		select 字段|常量|表达式|函数 【from 表】 【where 条件】 union 【all】
+		select 字段|常量|表达式|函数 【from 表】 【where 条件】 union 【all】
+		select 字段|常量|表达式|函数 【from 表】 【where 条件】 union  【all】
+		.....
+		select 字段|常量|表达式|函数 【from 表】 【where 条件】
 
-特点：
+	特点：
 
-	1、多条查询语句的查询的列数必须是一致的
-	2、多条查询语句的查询的列的类型几乎相同
-	3、union代表去重，union all代表不去重
+		1、多条查询语句的查询的列数必须是一致的
+		2、多条查询语句的查询的列的类型几乎相同
+		3、union代表去重，union all代表不去重
 
+	案例：查询中国用户中男性的信息及外国用户中男性的用户信息	
+	SELECT id,cname,csex FROM t_ca WHERE csex='男' 
+	union 
+	SELECT t_id,tName,tGender FROM t_ua WHERE tGender='male';
+	
 
 ##DML语言
 
@@ -737,46 +816,48 @@
 
 ##DDL语句
 ###库和表的管理
-库的管理：
+	库的管理：
 
-	一、创建库
-	create database 库名
-	二、删除库
-	drop database 库名
-表的管理：
-	#1.创建表
-	
-	CREATE TABLE IF NOT EXISTS stuinfo(
-		stuId INT,
-		stuName VARCHAR(20),
-		gender CHAR,
-		bornDate DATETIME
+		一、创建库
+		create database 库名
+		二、删除库
+		drop database 库名
 		
-	
-	);
+		
+	表的管理：
+		#1.创建表
+		CREATE TABLE IF NOT EXISTS stuinfo(
+			stuId INT,
+			stuName VARCHAR(20),
+			gender CHAR,
+			bornDate DATETIME
+			
+		
+		);
 
-	DESC studentinfo;
-	#2.修改表 alter
-	语法：ALTER TABLE 表名 ADD|MODIFY|DROP|CHANGE COLUMN 字段名 【字段类型】;
+		#2.修改表 alter
+		语法：ALTER TABLE 表名 ADD|MODIFY|DROP|CHANGE COLUMN 字段名 【字段类型】;
+		
+		#①修改字段名
+		语法：ALTER TABLE 表名 CHANGE COLUMN 旧列名 新列名 新列的类型
+		案例：修改studentinfo表中
+		ALTER TABLE studentinfo CHANGE  COLUMN sex gender CHAR;
+		
+		#②修改表名
+		ALTER TABLE stuinfo RENAME [TO]  studentinfo;
+		#③修改字段类型和列级约束
+		ALTER TABLE studentinfo MODIFY COLUMN borndate DATE ;
+		
+		#④添加字段
+		
+		ALTER TABLE studentinfo ADD COLUMN email VARCHAR(20) first;
+		#⑤删除字段
+		ALTER TABLE studentinfo DROP COLUMN email;
 	
-	#①修改字段名
-	ALTER TABLE studentinfo CHANGE  COLUMN sex gender CHAR;
-	
-	#②修改表名
-	ALTER TABLE stuinfo RENAME [TO]  studentinfo;
-	#③修改字段类型和列级约束
-	ALTER TABLE studentinfo MODIFY COLUMN borndate DATE ;
-	
-	#④添加字段
-	
-	ALTER TABLE studentinfo ADD COLUMN email VARCHAR(20) first;
-	#⑤删除字段
-	ALTER TABLE studentinfo DROP COLUMN email;
-	
-	
-	#3.删除表
-	
-	DROP TABLE [IF EXISTS] studentinfo;
+		
+		#3.删除表
+		
+		DROP TABLE [IF EXISTS] studentinfo;
 
 	
 
