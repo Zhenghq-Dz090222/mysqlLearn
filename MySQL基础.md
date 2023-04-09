@@ -816,6 +816,13 @@
 
 ##DDL语句
 ###库和表的管理
+
+	通用的建库建表语句写法：
+	DROP DATABASE IF EXISTS 旧库名;
+	CREATE DATABASE 新库名;
+	DROP TABLE IF EXISTS 旧表名;
+	CREATE TABLE 新表名();
+	
 	库的管理：
 
 		一、创建库
@@ -835,54 +842,149 @@
 		
 		);
 
-		#2.修改表 alter
-		语法：ALTER TABLE 表名 ADD|MODIFY|DROP|CHANGE COLUMN 字段名 【字段类型】;
+		#2.修改表。关键字：alter
+
+			1、修改列名
+			2、修改列的类型或约束
+			3、添加新列
+			4、删除列
+			5、修改表名
 		
-		#①修改字段名
-		语法：ALTER TABLE 表名 CHANGE COLUMN 旧列名 新列名 新列的类型
-		案例：修改studentinfo表中
-		ALTER TABLE studentinfo CHANGE  COLUMN sex gender CHAR;
+			#①修改列名(字段名)
+			语法：ALTER TABLE 表名 CHANGE COLUMN 旧列名 新列名 新列的类型
+			案例：修改studentinfo表中
+			ALTER TABLE studentinfo CHANGE COLUMN sex gender CHAR;
+			
+			#②修改列的类型或约束
+			语法：ALTER TABLE 表名 MODIFY COLUMN 列名 新类型
+			案例：
+			ALTER TABLE book MODIFY COLUMN pubdate TIMESTAMP;
+			
+			#③添加新列
+			语法：ALTER TABLE 表名 ADD COLUMN 新列名 新列的类型
+			案例：
+			ALTER TABLE author ADD COLUMN annual DOUBLE
+			ALTER TABLE stuinfo ADD COLUMN FOREIGN KEY(majorid) REFERENCES major(id);
+			
+			#④删除列
+			语法：ALTER TABLE 表名 DROP COLUMN 要删除的列名
+			案例：
+			ALTER TABLE author DROP COLUMN annual;
+			
+			#⑤修改表名
+			语法：ALTER TABLE 旧表名 RENAME [TO] 新表名 
+			案例：
+			ALTER TABLE author RENAME TO book_author;
 		
-		#②修改表名
-		ALTER TABLE stuinfo RENAME [TO]  studentinfo;
-		#③修改字段类型和列级约束
-		ALTER TABLE studentinfo MODIFY COLUMN borndate DATE ;
-		
-		#④添加字段
-		
-		ALTER TABLE studentinfo ADD COLUMN email VARCHAR(20) first;
-		#⑤删除字段
-		ALTER TABLE studentinfo DROP COLUMN email;
-	
 		
 		#3.删除表
-		
 		DROP TABLE [IF EXISTS] studentinfo;
-
+		
+		#4.表的复制
+			1.仅仅复制表的结构
+			语法：CREATE TABLE 新表名 LIKE 原表名
+			案例：创建一个新表new_author，并将author表的结构复制过来
+			CREATE TABLE new_author LIKE author;
+			
+			2.复制表的结构+数据
+			语法：CREATE TABLE 新表名 SELECT * FROM 原表名
+			案例：创建一个新表dep1，并将departments表中的所有数据都复制过来。
+			CREATE TABLE dep1 SELECT * FROM departments;
 	
 
 
 ###常见类型
-
-	整型：
-		
-	小数：
-		浮点型
-		定点型
+	数值型：
+		整型：Tinyint（1字节）、Smallint（2字节）、Mediumint（3字节）、integer（4字节）、Bigint（8字节）
+			1、默认是有符号的，如果想设置无符号需要在其后添加关键字UNSIGNED。形如：INT UNSIGNED 
+		小数：
+			浮点型：float(M,D)（4字节）、double(M,D)（8字节）。M表示整数部分加上小数部分的总长度，D表示小数点后的位数
+			定点型：decimal(M,D)。M表示整数部分加上小数部分的总长度，D表示小数点后的位数。默认为decimal(10,0)
 	字符型：
+		较短的文本：char(M)固定长度的字符、varchar(M)可变长度的字符。M表示最多的字符数，其中char的M限制为0~255之间的整数且可以省略默认为1，varchar的M限制为0~65535之间的整数且不可省略。
+		较长的文本：text、blob（较长的二进制数据）
 	日期型：
-	Blob类型：
+		date：4字节，最小值1000-01-01，最大值9999-12-31
+		datetime：8字节，最小值1000-01-01 00:00:00，最大值9999-12-31 23:59:59
+		timestamp：4字节，最小值1970-01-01 08:00:00，最大值2038年的某个时刻
+		time：3字节，最小值1000-01-01，最大值2038年的某个时刻
+		year：1字节，最小值1901，最大值2155
 
 
 
 ###常见约束
-
-	NOT NULL
-	DEFAULT
-	UNIQUE
-	CHECK
-	PRIMARY KEY
-	FOREIGN KEY
+	约束是一种限制，用于创建表时限制表中的数据，为了保证数据的一致性。
+	添加约束的时机：
+		1.创建表时：
+			CREATE TABLE 表名(
+				字段名 字段类型 约束
+			)
+		2.修改表时：
+			ALTER TABLE book MODIFY COLUMN pubdate TIMESTAMP;
+	
+	
+	约束分为6大类：
+		NOT NULL：非空，用于保证该字段的值不能为空
+		DEFAULT：默认，用于保证该字段有默认值
+		PRIMARY KEY：主键，用于保证该字段的值具有唯一性，并且非空
+		UNIQUE：唯一，用于保证该字段的值具有唯一性，但可以为空
+		CHECK：检查约束，mysql中不支持。
+		FOREIGN KEY：外键，用于限制两个表的关系，用于保证该字段的值必须来自于主表的关联列的值
+		
+	约束根据所在位置的不可，又可分为2类：
+		列级约束：6大约束语法上都支持，但外键约束没有效果
+		CREATE TABLE 表名(
+			字段名 字段类型 列级约束
+		)
+		CREATE TABLE stuinfo(
+				id INT PRIMARY KEY,
+				stuName VARCHAR(20) NOT NULL,
+				gender CHAR(1),
+				seat INT UNIQUE,
+				age INT DEFAULT 18
+			)
+		
+		表级约束：除了非空、默认，其他都支持
+		CREATE TABLE 表名(
+			字段名 字段类型 
+			字段名 字段类型,
+			字段名 字段类型,
+			表级约束
+		)
+		CREATE TABLE stuinfo(
+				id INT,
+				stuName VARCHAR(20),
+				gender CHAR(1),
+				seat INT,
+				age INT,
+				majorid INT,
+				
+				[CONSTRAINT 约束名] PRIMARY KEY(id),
+				[CONSTRAINT 约束名] UNIQUE(seat)
+				[CONSTRAINT 约束名] FOREIGN KEY(majorid) REFERENCES major(id) 
+			)
+		[CONSTRAINT 约束名]可以省略不写
+		
+	主键和唯一的对比：
+				保证唯一性			是否允许为空		一个表中可以有多少个		是否允许组合
+		主键		√					×					至多有1个					√，但不推荐
+		唯一		√					√					可以有多个					√，但不推荐
+	
+	外键：
+		1、要求在从表设置外键关系
+		2、从表的外键列的类型和主表的关联列的类型要求一致，名称无要求
+		3、主表的关联列必须是一个key（一般是主键或唯一）
+		4、插入数据时，必须先插入主表，再插入从表。删除数据时必须先删除从表，再删除主表。
+		案例：向表emp2中添加列dept_id，并在其中定义FOREIGN KEY约束，与之关联的列是dept2表中的id列。
+			ALTER TABLE emp2 ADD COLUMN dept_id INT;
+			ALTER TABLE emp2 ADD CONSTRAINT fk_emp2_dept2 FOREIGN KEY(dept_id) REFERENCES dep2(id);
+	
+	标识列：又称为自增长列，可以不用手动的插入值，系统提供默认的序列值
+		关键字：AUTO_INCREMENT。
+		标识列不必须和主键搭配，但要求是一个key；一个表中仅能有1个标识列
+	
+		
+		
 
 ##数据库事务
 ###含义
