@@ -1011,17 +1011,21 @@
 	insert、update、delete语句本身就是一个事务
 
 
-显式事务，具有明显的开启和结束事务的标志
+显式事务，具有明显的开启和结束事务的标志。但前提是必须先设置自动提交功能autocommit为0。set autocommit=0; show variables like 'autocommit';
 
-		1、开启事务
-		取消自动提交事务的功能
+		步骤1：开启事务
+		set autocommit=0;
+		start transaction;	//可选的
 		
-		2、编写事务的一组逻辑操作单元（多条sql语句）
-		insert
-		update
-		delete
+		步骤2：编写事务中的sql语句(select、insert、update、delete)
+		语句1;
+		语句2;
+		...
 		
-		3、提交事务或回滚事务
+		步骤3：结束事务
+		commit;		//提交事务
+		rollback;	//回滚事务
+
 ###使用到的关键字
 
 	set autocommit=0;
@@ -1043,7 +1047,7 @@
 
 	脏读：一个事务读取到了另外一个事务未提交的数据
 	不可重复读：同一个事务中，多次读取到的数据不一致
-	幻读：一个事务读取数据时，另外一个事务进行更新，导致第一个事务读取到了没有更新的数据
+	幻读：一个事务t1读取数据时，另外一个事务t2进行插入了一些新的行。之后，如果t1再次读取同一个表，就会多出几行。
 	
 如何避免事务的并发问题？
 
@@ -1053,12 +1057,21 @@
 	3、REPEATABLE READ 可以避免脏读、不可重复读和一部分幻读
 	4、SERIALIZABLE可以避免脏读、不可重复读和幻读
 	
-设置隔离级别：
+	事务隔离级别：
+								解决脏读		解决不可重复读			解决幻读
+		read uncommitted		   ×				  ×					    ×
+		read committed			   √				  ×						×
+		repeatable read			   √				  √						×	
+		serializable			   √				  √						√
+		
+		mysql中默认为repeatable read
+	
 
-	set session|global  transaction isolation level 隔离级别名;
-查看隔离级别：
-
-	select @@tx_isolation;
+	查看隔离级别：
+		select @@tx_isolation;
+	
+	设置隔离级别：
+		set session|global  transaction isolation level 隔离级别名;
 	
 
 
