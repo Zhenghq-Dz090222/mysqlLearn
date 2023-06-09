@@ -377,8 +377,8 @@
 		group by 分组的字段(或者是表达式或者是函数),分组的字段(或者是表达式或者是函数)
 		【order by子句】
 	注意：
-		查询列表必须特殊，要求是统计函数和group by 后出现的字段。
-	
+		查询列表必须特殊，要求是统计函数和group by 后出现的字段。执行顺序为where > group by > select > order by > limit
+		
 	特点：
 	1、可以按单个字段分组
 	2、和分组函数一同查询的字段最好是分组后的字段
@@ -510,7 +510,7 @@
 			【group by 分组字段】
 			【having 分组后的筛选条件】
 			【order by 排序的字段或表达式】
-			
+			执行顺序from->on->join->where->GROUP BY->having->select->DISTINCT->order by
 		连接类型
 			内连接：inner
 			外连接：用于查询一个表中有，另一个表没有的记录
@@ -1376,8 +1376,9 @@
 
 	leave类似于java中的break语句，跳出所在循环！！！
 	
-
-
+索引
+	查看表的索引：
+	SHOW INDEX FROM student; 语句表示查看 student 数据表的索引
 
 
 
