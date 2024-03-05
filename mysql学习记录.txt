@@ -54,7 +54,7 @@ DISTINCT的用法：
 WHERE的用法：
 	在SELECT语句中，数据根据WHERE子句中指定的搜索条件进行过滤。WHERE子句引导用来表示查询条件的表达式（条件表达式），WHERE子句要紧跟在FROM子句之后。MySQL中WHERE子句支持=、!=、>=、>、<=、<、<>这7种条件运算符，
 其中<>也表示不等于。这些比较运算符可以对字符、数字和日期等几乎所有数据类型的列和值进行比较。需要注意的是在比较字符串时，字符串类型的数据原则上按照字典顺序进行排序，不能与数字的大小顺序混淆。也不能对NULL使用比较运算符，只能用IS NULL来进行判断。反之，希望选取不是NULL的记录时，需要使用 IS NOT NULL 运算符。想要指定“不是 ~”这样的否定条件时，需要使用 <> 运算符。 除此之外还存在另外一个表示否定，并且使用范围更广的运算符 NOT。NOT 不能单独使用，
-必须和其他查询条件组合起来使用。
+必须和其他查询条件组合起来使用。当你在 WHERE 子句中比较字符串或日期型的常量时，通常使用单引号（'）来包围。总的来说，MySQL 更推荐使用单引号来引用字符串，因为这是最通用且最不容易引起混淆的方式。
 	例如 SELECT product_name,product_price FROM products WHERE product_price = 2.5;
 	例如 SELECT product_name, product_type FROM Product WHERE sale_price <> 500;
 	例如 SELECT product_name, product_type, sale_price FROM Product WHERE NOT sale_price >= 1000;
@@ -659,7 +659,7 @@ t_grade表记录不足的地方均为NULL.
 			【order by 排序的字段或表达式】
 			执行顺序from->on->join->where->GROUP BY->having->select->DISTINCT->order by
 		连接类型
-			内连接：inner
+			内连接：inner。包括等值连接、非等值连接
 			外连接：用于查询一个表中有，另一个表没有的记录
 				左外连接：left [outer]
 				右外连接 right [outer]
@@ -667,7 +667,7 @@ t_grade表记录不足的地方均为NULL.
 			交叉连接：cross
 	
 	
-		（一）内连接
+		（一）内连接：包括等值连接、非等值连接
 			语法：
 				select 查询列表
 				from 表1 别名
